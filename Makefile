@@ -1,4 +1,4 @@
-.PHONY: proto
+.PHONY: proto test test-race vet
 
 # Все proto-файлы проекта
 PROTO_FILES := proto/task/v1/task.proto
@@ -13,3 +13,15 @@ proto:
 		--go_out=gen --go_opt=paths=source_relative \
 		--go-grpc_out=gen --go-grpc_opt=paths=source_relative \
 		$(PROTO_FILES)
+
+# Обычный запуск тестов
+test:
+	go test ./...
+
+# Тесты с детектором гонок данных
+test-race:
+	go test -race ./...
+
+# Статический анализ
+vet:
+	go vet ./...
