@@ -1,0 +1,31 @@
+name: CI
+
+# Когда запускать: пуш в main и любой pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Минимальные права: workflow может только читать код репозитория
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Скачиваем код репозитория на машину
+      - uses: actions/checkout@v5
+
+      # Ставим Go той версии, которая указана в go.mod
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # Статический анализ
+      - name: Vet
+        run: go vet ./...
+
+      # Тесты с детектором гонок данных
+      - name: Test with race detector
+        run: go test -race ./...
