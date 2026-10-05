@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+// Имя proto-пакета
+// Версия v1 нужна, чтобы позже можно было выпустить несовместимый v2 и не сломать старых клиентов
+package task.v1;
+
+// Куда генерировать Go-код: "путь_импорта;имя_пакета"
+// Путь должен совпадать с именем модуля из go.mod + путь к папке gen
+option go_package = "github.com/nikolaykonkin/grpc-task-queue/gen/task/v1;taskv1";
+
+// Статус задачи: нулевое значение обязательно и означает "не задано"
+// В ListJobsRequest оно используется как "фильтра по статусу нет"
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_RUNNING = 2;
+  JOB_STATUS_DONE = 3;
+  JOB_STATUS_FAILED = 4;
+  JOB_STATUS_CANCELLED = 5;
+}
+
+// Job это задача в очереди
+message Job {
+  string id = 1;          // hex-строка, генерируется на сервере
+  string kind = 2;        // тип задачи, например "email"
+  string payload = 3;     // входные данные задачи
+  JobStatus status = 4;
+  string result = 5;      // результат, заполняет воркер
+  string error = 6;       // текст ошибки, если статус FAILED
+  int64 created_at = 7;   // Unix-время в секундах
+  int64 updated_at = 8;   // Unix-время в секундах
+}
+
+// TaskService это очередь задач: все методы unary (запрос, ответ)
+service TaskService {
+  // Создать задачу в статусе PENDING
+  rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
+  // Получить задачу по id
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  // Список задач с фильтром по статусу и пагинацией
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  // Отменить задачу, пока она в статусе PENDING
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+  // Метод для воркера: менять статус задачи (RUNNING, DONE, FAILED)
+  rpc UpdateJobStatus(UpdateJobStatusRequest) returns (UpdateJobStatusResponse);
+}
+
+message SubmitJobRequest {
+  string kind = 1;
+  string payload = 2;
+}
+
+message SubmitJobResponse {
+  Job job = 1;
+}
+
+message GetJobRequest {
+  string id = 1;
+}
+
+message GetJobResponse {
+  Job job = 1;
+}
+
+message ListJobsRequest {
+  // JOB_STATUS_UNSPECIFIED означает "без фильтра"
+  JobStatus status = 1;
+  // Сколько задач вернуть (размер страницы)
+  int32 limit = 2;
+  // Сколько задач пропустить с начала списка
+  int32 offset = 3;
+}
+
+message ListJobsResponse {
+  repeated Job jobs = 1;
+  // Сколько всего задач подходит под фильтр (без учета limit и offset)
+  int32 total = 2;
+}
+
+message CancelJobRequest {
+  string id = 1;
+}
+
+message CancelJobResponse {
+  Job job = 1;
+}
+
+message UpdateJobStatusRequest {
+  string id = 1;
+  JobStatus status = 2;
+  string result = 3;
+  string error = 4;
+}
+
+message UpdateJobStatusResponse {
+  Job job = 1;
+}
