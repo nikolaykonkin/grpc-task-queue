@@ -1,4 +1,4 @@
-.PHONY: proto test test-race vet
+.PHONY: proto build run-api test test-race vet
 
 # Все proto-файлы проекта
 PROTO_FILES := proto/task/v1/task.proto
@@ -13,6 +13,15 @@ proto:
 		--go_out=gen --go_opt=paths=source_relative \
 		--go-grpc_out=gen --go-grpc_opt=paths=source_relative \
 		$(PROTO_FILES)
+
+# Сборка бинарников в bin/
+build:
+	@mkdir -p bin
+	go build -o bin/task-api ./cmd/task-api
+
+# Запуск сервера
+run-api:
+	go run ./cmd/task-api
 
 # Обычный запуск тестов
 test:
