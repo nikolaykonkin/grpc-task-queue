@@ -1,6 +1,6 @@
 module github.com/nikolaykonkin/grpc-task-queue
 
-go 1.26.8
+go 1.26
 
 require (
 	google.golang.org/grpc v1.84.0
